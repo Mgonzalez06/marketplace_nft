@@ -3,8 +3,9 @@ pragma solidity ^0.8.26;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
 
-contract MarketplaceNFT is Ownable {
+contract MarketplaceNFT is Ownable, Pausable {
     struct Listing {
         address seller;
         address nftContract;
@@ -13,15 +14,8 @@ contract MarketplaceNFT is Ownable {
         bool sold;
     }
 
-    bool private paused;
     Listing[] public listings;
     mapping(address => mapping(uint256 => bool)) public activeListings;
-
-    // Modifier to check if the contract is paused
-    modifier whenNotPaused() {
-        require(!paused, "The contract is paused");
-        _;
-    }
 
     // Modifier to ensure only the seller can modify their listing
     modifier onlySeller(uint256 listingId) {
@@ -30,28 +24,22 @@ contract MarketplaceNFT is Ownable {
     }
 
     // Events to indicate important state changes
-    event Paused();
-    event Unpaused();
     event NFTListed(address indexed seller, address indexed nftContract, uint256 indexed tokenId, uint256 price);
     event NFTSold(address indexed buyer, address indexed nftContract, uint256 indexed tokenId, uint256 price);
     event ListingCanceled(address indexed seller, address indexed nftContract, uint256 indexed tokenId);
     event ListingPriceUpdated(address indexed seller, address indexed nftContract, uint256 indexed tokenId, uint256 newPrice);
 
     // Constructor: initializes the contract in a non-paused state
-    constructor() Ownable(msg.sender) {
-        paused = false;
-    }
+    constructor() Ownable(msg.sender) {}
 
     // Only the owner of the contract can pause the marketplace
     function pause() public onlyOwner {
-        paused = true;
-        emit Paused();
+        _pause();
     }
 
     // Only the owner of the contract can unpause the marketplace
     function unpause() public onlyOwner {
-        paused = false;
-        emit Unpaused();
+        _unpause();
     }
 
     // Check if a listing is active
